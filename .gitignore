@@ -1,0 +1,61 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.lcov
+.nyc_output
+
+# TanStack Start / Vite
+dist
+dist-ssr
+.nitro
+.tanstack
+.output
+.vinxi
+*.local
+count.txt
+
+# Production
+build
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env*.local
+.env.production
+
+# Convex
+.convex/
+convex/_generated/
+
+# Cloudflare
+.wrangler/
+wrangler.toml.backup
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Misc
+*.pem
+.cache
+.turbo
+*.tsbuildinfo
+
+# Sentry
+.sentryclirc
+
+# Local
+todos.json

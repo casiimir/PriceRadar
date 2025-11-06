@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.next
+.tanstack
+.vinxi
+.output
+coverage
+pnpm-lock.yaml
+package-lock.json
