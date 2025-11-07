@@ -21,18 +21,22 @@ npm install
 
 ### 2. Configure Secrets
 
+For local development, edit `.dev.vars`:
+```
+CONVEX_URL=https://your-deployment.convex.cloud
+CONVEX_DEPLOY_KEY=
+FIRECRAWL_API_KEY=your-firecrawl-api-key
+```
+
+For production deployment:
 ```bash
 # Set Convex URL
 wrangler secret put CONVEX_URL
 # Paste: https://your-deployment.convex.cloud
 
-# Set Convex Deploy Key (optional, for authenticated queries)
-wrangler secret put CONVEX_DEPLOY_KEY
-# Paste: your-deploy-key
-
-# Set Firecrawl API Key (when integrating scraping)
+# Set Firecrawl API Key (get from https://firecrawl.dev)
 wrangler secret put FIRECRAWL_API_KEY
-# Paste: your-api-key
+# Paste: fc-xxxxxxxxxxxxxxxx
 
 # Set Sentry DSN (optional, for error tracking)
 wrangler secret put SENTRY_DSN
