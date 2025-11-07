@@ -251,6 +251,68 @@ export const remove = mutation({
 })
 
 /**
+ * Create monitor from UI (simplified version without AI parsing)
+ * TODO: Replace with AI-powered parsing in Phase 6
+ */
+export const createFromUI = mutation({
+  args: {
+    userId: v.id('users'),
+    queryText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now()
+
+    // Get user to check plan limits
+    const user = await ctx.db.get(args.userId)
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    // Check plan limits
+    const activeMonitors = await ctx.db
+      .query('monitors')
+      .withIndex('by_userId_status', (q) =>
+        q.eq('userId', args.userId).eq('status', 'active')
+      )
+      .collect()
+
+    if (user.plan === 'free' && activeMonitors.length >= 1) {
+      throw new Error('Free plan limit: 1 active monitor. Upgrade to Pro for 20 monitors.')
+    }
+
+    if (user.plan === 'pro' && activeMonitors.length >= 20) {
+      throw new Error('Pro plan limit: 20 active monitors.')
+    }
+
+    // For now, use default settings until AI parser is implemented
+    // TODO: In Phase 6, add AI parsing to extract structured data from queryText
+    // Temporarily use the full query text as the item for URL building
+    const defaultQueryJson = {
+      query: args.queryText,
+      item: args.queryText, // Use full text as search term until AI parsing is implemented
+      // AI will extract: brand, condition, price_min, price_max, location, etc.
+    }
+
+    const defaultSites = user.plan === 'free' ? ['ebay'] : ['ebay', 'subito']
+    const defaultFrequency = user.plan === 'free' ? 30 : 3
+
+    // Create monitor
+    const monitorId = await ctx.db.insert('monitors', {
+      userId: args.userId,
+      queryText: args.queryText,
+      queryJson: defaultQueryJson,
+      status: 'active',
+      sites: defaultSites,
+      frequencyMinutes: defaultFrequency,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    return monitorId
+  },
+})
+
+/**
  * Update monitor configuration
  */
 export const update = mutation({

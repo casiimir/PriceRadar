@@ -127,6 +127,53 @@ export default {
       }
     }
 
+    // Run a specific monitor immediately (for UI trigger)
+    if (url.pathname === '/run-monitor' && request.method === 'POST') {
+      try {
+        const body = await request.json() as { monitorId: string }
+
+        if (!body.monitorId) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'monitorId is required'
+          }), {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          })
+        }
+
+        // Import the function to run a single monitor
+        const { runSingleMonitor } = await import('./orchestrator')
+        const result = await runSingleMonitor(env, body.monitorId)
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Monitor ${body.monitorId} executed`,
+          offersFound: result.offersFound
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      } catch (error) {
+        console.error('[RUN-MONITOR] Error:', error)
+        return new Response(JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
+    }
+
     return new Response('Price Radar Worker v1.0', {
       status: 200,
       headers: corsHeaders

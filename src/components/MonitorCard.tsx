@@ -1,5 +1,7 @@
-import { Pause, Play, Trash2, Eye, Clock, Globe, AlertCircle } from 'lucide-react'
+import { Pause, Play, Trash2, Eye, Clock, Globe, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Id } from '../../convex/_generated/dataModel'
+import { useState } from 'react'
+import OfferCard from './OfferCard'
 
 interface Monitor {
   _id: Id<'monitors'>
@@ -13,26 +15,43 @@ interface Monitor {
   createdAt: number
 }
 
+interface Offer {
+  _id: Id<'offers'>
+  title: string
+  price: number
+  currency: string
+  url: string
+  siteName: string
+  snippet: string
+  imageUrl?: string
+  condition?: string
+  location?: string
+  status: string
+  foundAt: number
+}
+
 interface MonitorCardProps {
   monitor: Monitor
-  offerCount?: number
+  offers?: Offer[]
   onPause?: (monitorId: Id<'monitors'>) => void
   onResume?: (monitorId: Id<'monitors'>) => void
   onDelete?: (monitorId: Id<'monitors'>) => void
-  onViewOffers?: (monitorId: Id<'monitors'>) => void
+  onArchiveOffer?: (offerId: Id<'offers'>) => void
 }
 
 export default function MonitorCard({
   monitor,
-  offerCount = 0,
+  offers = [],
   onPause,
   onResume,
   onDelete,
-  onViewOffers,
+  onArchiveOffer,
 }: MonitorCardProps) {
+  const [showOffers, setShowOffers] = useState(false)
   const isActive = monitor.status === 'active'
   const isPaused = monitor.status === 'paused'
   const hasError = monitor.status === 'error'
+  const offerCount = offers.length
 
   const getStatusBadge = () => {
     if (hasError) {
@@ -119,13 +138,24 @@ export default function MonitorCard({
 
         {/* Actions */}
         <div className="card-actions justify-end">
-          <button
-            className="btn btn-sm btn-ghost gap-2"
-            onClick={() => onViewOffers?.(monitor._id)}
-          >
-            <Eye className="w-4 h-4" />
-            View Offers
-          </button>
+          {offerCount > 0 && (
+            <button
+              className="btn btn-sm btn-ghost gap-2"
+              onClick={() => setShowOffers(!showOffers)}
+            >
+              {showOffers ? (
+                <>
+                  <ChevronUp className="w-4 h-4" />
+                  Hide Offers
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4" />
+                  Show Offers ({offerCount})
+                </>
+              )}
+            </button>
+          )}
 
           {isActive && (
             <button
@@ -159,6 +189,27 @@ export default function MonitorCard({
             Delete
           </button>
         </div>
+
+        {/* Offers Section */}
+        {showOffers && offers.length > 0 && (
+          <>
+            <div className="divider my-2"></div>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-base-content/70 flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                Recent Offers
+              </h4>
+              {offers.slice(0, 5).map((offer) => (
+                <OfferCard key={offer._id} offer={offer} onArchive={onArchiveOffer} />
+              ))}
+              {offers.length > 5 && (
+                <p className="text-center text-sm text-base-content/50">
+                  and {offers.length - 5} more offers...
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

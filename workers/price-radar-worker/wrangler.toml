@@ -1,6 +1,11 @@
 name = "price-radar-worker"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Dev server configuration
+[dev]
+port = 8787
 
 # Environment variables
 [vars]
