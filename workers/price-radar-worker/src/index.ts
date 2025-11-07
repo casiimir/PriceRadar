@@ -15,7 +15,7 @@ export interface Env {
   SENTRY_DSN?: string
 
   // Bindings
-  AI?: any // Cloudflare AI binding
+  AI: Ai // Cloudflare AI binding (required for Phase 6)
   CACHE?: KVNamespace // KV for caching
 
   // Variables
@@ -161,6 +161,91 @@ export default {
         })
       } catch (error) {
         console.error('[RUN-MONITOR] Error:', error)
+        return new Response(JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
+    }
+
+    // Parse query endpoint: AI-powered query parsing
+    if (url.pathname === '/parse-query' && request.method === 'POST') {
+      try {
+        const body = await request.json() as { queryText: string }
+
+        if (!body.queryText) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'queryText is required'
+          }), {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          })
+        }
+
+        const { parseQueryWithAI } = await import('./ai-parser')
+        const result = await parseQueryWithAI(env, body.queryText)
+
+        return new Response(JSON.stringify(result), {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      } catch (error) {
+        console.error('[PARSE-QUERY] Error:', error)
+        return new Response(JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      }
+    }
+
+    // Test endpoint: Direct AI extraction (for testing without Firecrawl)
+    if (url.pathname === '/test-ai-extract' && request.method === 'POST') {
+      try {
+        const body = await request.json()
+        const { markdown, query, sourceUrl } = body
+
+        if (!markdown || !query || !sourceUrl) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Missing required fields: markdown, query, sourceUrl'
+          }), {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          })
+        }
+
+        const { extractOffersWithAI } = await import('./ai-extractor')
+        const result = await extractOffersWithAI(env, markdown, query, sourceUrl)
+
+        return new Response(JSON.stringify(result), {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        })
+      } catch (error) {
+        console.error('[TEST-AI-EXTRACT] Error:', error)
         return new Response(JSON.stringify({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
