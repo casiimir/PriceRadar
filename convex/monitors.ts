@@ -10,9 +10,20 @@ import { mutation, query } from './_generated/server'
 // ============================================
 
 /**
- * Get all monitors for a user
+ * Get all monitors (for admin/testing)
  */
 export const getAll = query({
+  args: {},
+  handler: async (ctx) => {
+    const monitors = await ctx.db.query('monitors').collect()
+    return monitors.sort((a, b) => b.createdAt - a.createdAt)
+  },
+})
+
+/**
+ * Get all monitors for a user
+ */
+export const getByUserId = query({
   args: {
     userId: v.id('users'),
     status: v.optional(v.string()), // Filter by status

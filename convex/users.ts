@@ -33,6 +33,16 @@ export const getByEmail = query({
 })
 
 /**
+ * Get all users
+ */
+export const getAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query('users').collect()
+  },
+})
+
+/**
  * Get current authenticated user
  * (Will be updated when we add Convex Auth)
  */

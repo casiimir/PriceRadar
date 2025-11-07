@@ -1,0 +1,29 @@
+name = "price-radar-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Cron Triggers
+# Free plan: every 30 minutes
+# Pro plan: every 3 minutes
+[triggers]
+crons = ["*/3 * * * *", "*/30 * * * *"]
+
+# Bindings for Cloudflare services
+# AI binding will be added when we integrate AI
+# [ai]
+# binding = "AI"
+
+# KV for caching (optional)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+
+# Secrets (set via wrangler secret put)
+# - CONVEX_URL
+# - CONVEX_DEPLOY_KEY
+# - FIRECRAWL_API_KEY
+# - SENTRY_DSN

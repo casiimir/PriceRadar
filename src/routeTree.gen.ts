@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestWorkerRouteImport } from './routes/test-worker'
 import { Route as TestUiRouteImport } from './routes/test-ui'
 import { Route as TestConvexRouteImport } from './routes/test-convex'
 import { Route as TestComponentsRouteImport } from './routes/test-components'
@@ -24,6 +25,11 @@ import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
+const TestWorkerRoute = TestWorkerRouteImport.update({
+  id: '/test-worker',
+  path: '/test-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TestUiRoute = TestUiRouteImport.update({
   id: '/test-ui',
   path: '/test-ui',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/test-components': typeof TestComponentsRoute
   '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/test-components': typeof TestComponentsRoute
   '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/test-components': typeof TestComponentsRoute
   '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/test-components'
     | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/test-components'
     | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/test-components'
     | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   TestComponentsRoute: typeof TestComponentsRoute
   TestConvexRoute: typeof TestConvexRoute
   TestUiRoute: typeof TestUiRoute
+  TestWorkerRoute: typeof TestWorkerRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
   DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/test-worker': {
+      id: '/test-worker'
+      path: '/test-worker'
+      fullPath: '/test-worker'
+      preLoaderRoute: typeof TestWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/test-ui': {
       id: '/test-ui'
       path: '/test-ui'
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestComponentsRoute: TestComponentsRoute,
   TestConvexRoute: TestConvexRoute,
   TestUiRoute: TestUiRoute,
+  TestWorkerRoute: TestWorkerRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
   DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,

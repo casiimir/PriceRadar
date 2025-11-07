@@ -10,6 +10,25 @@ import { mutation, query } from './_generated/server'
 // ============================================
 
 /**
+ * Get all offers (for admin/testing)
+ */
+export const getAll = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const offers = await ctx.db.query('offers').collect()
+    const sorted = offers.sort((a, b) => b.foundAt - a.foundAt)
+
+    if (args.limit) {
+      return sorted.slice(0, args.limit)
+    }
+
+    return sorted
+  },
+})
+
+/**
  * Get all offers for a monitor
  */
 export const getByMonitorId = query({
