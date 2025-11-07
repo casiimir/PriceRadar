@@ -1,31 +1,115 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Plus, TrendingUp, Bell, Activity } from 'lucide-react'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
+import MonitorCard from '../components/MonitorCard'
+import MonitorInput from '../components/MonitorInput'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })
 
 function Dashboard() {
-  // TODO: Replace with real data from Convex
-  const user = {
-    name: 'Demo User',
-    email: 'demo@example.com',
-    plan: 'free' as const,
-  }
+  // State for modal
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
+  // TODO: Get from auth when implemented
+  // For now, use first user from database
+  const users = useQuery(api.users.getAll)
+  const user = users?.[0]
+
+  // Get user's monitors
+  const monitors = useQuery(
+    api.monitors.getByUserId,
+    user ? { userId: user._id as Id<'users'> } : 'skip'
+  )
+
+  // Get all offers for this user
+  const allOffers = useQuery(
+    api.offers.getByUserId,
+    user ? { userId: user._id as Id<'users'> } : 'skip'
+  )
+
+  // Calculate stats
   const stats = {
-    activeMonitors: 0,
-    totalOffers: 0,
-    newOffers: 0,
-    savedAmount: 0,
+    activeMonitors: monitors?.filter((m) => m.status === 'active').length ?? 0,
+    totalOffers: allOffers?.length ?? 0,
+    newOffers: allOffers?.filter((o) => o.status === 'new').length ?? 0,
+    savedAmount: 0, // TODO: Calculate from offers
   }
 
-  const monitors = [] // Will be populated from Convex
+  // Mutations
+  const updateMonitorStatus = useMutation(api.monitors.updateStatus)
+  const deleteMonitor = useMutation(api.monitors.remove)
+  const archiveOffer = useMutation(api.offers.archive)
+  const createMonitor = useMutation(api.monitors.createFromUI)
+
+  // Helper function to get offers for a monitor
+  const getOffersForMonitor = (monitorId: Id<'monitors'>) => {
+    return allOffers?.filter((offer) => offer.monitorId === monitorId) ?? []
+  }
+
+  // Handlers
+  const handlePause = async (monitorId: Id<'monitors'>) => {
+    await updateMonitorStatus({ monitorId, status: 'paused' })
+  }
+
+  const handleResume = async (monitorId: Id<'monitors'>) => {
+    await updateMonitorStatus({ monitorId, status: 'active' })
+  }
+
+  const handleDelete = async (monitorId: Id<'monitors'>) => {
+    await deleteMonitor({ monitorId })
+  }
+
+  const handleArchiveOffer = async (offerId: Id<'offers'>) => {
+    await archiveOffer({ offerId })
+  }
+
+  const handleCreateMonitor = async (query: string) => {
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    try {
+      // Create the monitor in Convex
+      const monitorId = await createMonitor({ userId: user._id, queryText: query })
+      setShowCreateModal(false)
+
+      // Trigger immediate execution via Worker
+      // Note: This runs in background, don't wait for it
+      fetch('http://localhost:8787/run-monitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monitorId }),
+      })
+        .then((res) => res.json())
+        .then((data) => console.log('[MONITOR] Immediate execution triggered:', data))
+        .catch((err) => console.warn('[MONITOR] Failed to trigger immediate execution:', err))
+    } catch (error) {
+      // Error will be shown by MonitorInput component
+      throw error
+    }
+  }
+
+  const isLoading = !user || monitors === undefined
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-6 py-8">
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">
-          Welcome back, {user.name.split(' ')[0]}!
+          Welcome back, {user?.name?.split(' ')[0] ?? 'there'}!
         </h1>
         <p className="text-base-content/70">
           Here is what is happening with your monitors
@@ -42,7 +126,7 @@ function Dashboard() {
             <div className="stat-title">Active Monitors</div>
             <div className="stat-value text-primary">{stats.activeMonitors}</div>
             <div className="stat-desc">
-              {user.plan === 'free' ? '1 max on Free' : '20 max on Pro'}
+              {user!.plan === 'free' ? '1 max on Free' : '20 max on Pro'}
             </div>
           </div>
         </div>
@@ -94,7 +178,7 @@ function Dashboard() {
       </div>
 
       {/* Plan Banner */}
-      {user.plan === 'free' && (
+      {user!.plan === 'free' && (
         <div className="alert alert-info mb-8">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -115,7 +199,9 @@ function Dashboard() {
               Upgrade to Pro for 20 monitors, 3-minute scans, and email notifications!
             </div>
           </div>
-          <button className="btn btn-sm btn-primary">Upgrade Now</button>
+          <Link to="/pricing" className="btn btn-sm btn-primary">
+            Upgrade Now
+          </Link>
         </div>
       )}
 
@@ -125,13 +211,13 @@ function Dashboard() {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Your Monitors</h2>
-            <button className="btn btn-primary gap-2">
+            <button className="btn btn-primary gap-2" onClick={() => setShowCreateModal(true)}>
               <Plus className="w-5 h-5" />
               New Monitor
             </button>
           </div>
 
-          {monitors.length === 0 ? (
+          {!monitors || monitors.length === 0 ? (
             <div className="card bg-base-200">
               <div className="card-body items-center text-center py-16">
                 <Activity className="w-16 h-16 text-base-content/20 mb-4" />
@@ -139,7 +225,10 @@ function Dashboard() {
                 <p className="text-base-content/70 mb-6">
                   Create your first monitor to start finding great deals!
                 </p>
-                <button className="btn btn-primary gap-2">
+                <button
+                  className="btn btn-primary gap-2"
+                  onClick={() => setShowCreateModal(true)}
+                >
                   <Plus className="w-5 h-5" />
                   Create Your First Monitor
                 </button>
@@ -147,8 +236,17 @@ function Dashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Monitor cards will go here */}
-              <p>Monitors will appear here...</p>
+              {monitors.map((monitor) => (
+                <MonitorCard
+                  key={monitor._id}
+                  monitor={monitor}
+                  offers={getOffersForMonitor(monitor._id)}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onDelete={handleDelete}
+                  onArchiveOffer={handleArchiveOffer}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -160,17 +258,12 @@ function Dashboard() {
             <div className="card-body">
               <h3 className="card-title text-lg mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button className="btn btn-outline btn-block justify-start">
+                <button
+                  className="btn btn-outline btn-block justify-start"
+                  onClick={() => setShowCreateModal(true)}
+                >
                   <Plus className="w-4 h-4" />
                   New Monitor
-                </button>
-                <button className="btn btn-outline btn-block justify-start">
-                  <Bell className="w-4 h-4" />
-                  View All Offers
-                </button>
-                <button className="btn btn-outline btn-block justify-start">
-                  <TrendingUp className="w-4 h-4" />
-                  View History
                 </button>
               </div>
             </div>
@@ -199,6 +292,27 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Create Monitor Modal */}
+      {showCreateModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-3xl">
+            <form method="dialog">
+              <button
+                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                onClick={() => setShowCreateModal(false)}
+              >
+                ✕
+              </button>
+            </form>
+            <h3 className="font-bold text-lg mb-4">Create New Monitor</h3>
+            <MonitorInput onSubmit={handleCreateMonitor} />
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setShowCreateModal(false)}>close</button>
+          </form>
+        </dialog>
+      )}
     </div>
   )
 }

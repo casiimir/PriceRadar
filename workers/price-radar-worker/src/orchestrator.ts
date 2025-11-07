@@ -9,6 +9,7 @@ import {
   createDummyOffer,
   updateMonitorLastRun,
 } from './convex-client'
+import { scrapeUrls } from './scraper'
 
 export interface Monitor {
   _id: string
@@ -57,6 +58,39 @@ export async function orchestrateScans(env: Env, frequencyMinutes: number): Prom
 }
 
 /**
+ * Run a single monitor immediately (called from HTTP endpoint)
+ */
+export async function runSingleMonitor(
+  env: Env,
+  monitorId: string
+): Promise<{ offersFound: number }> {
+  console.log(`[RUN-SINGLE] Executing monitor ${monitorId}`)
+
+  const client = getConvexClient(env)
+
+  try {
+    // Fetch the monitor from Convex
+    const monitor = await client.query('monitors:getById', { monitorId })
+
+    if (!monitor) {
+      throw new Error(`Monitor ${monitorId} not found`)
+    }
+
+    if (monitor.status !== 'active') {
+      throw new Error(`Monitor ${monitorId} is not active (status: ${monitor.status})`)
+    }
+
+    // Process the monitor
+    await processMonitor(env, client, monitor)
+
+    return { offersFound: 1 } // TODO: Return actual count when AI extraction is implemented
+  } catch (error) {
+    console.error(`[RUN-SINGLE] Error:`, error)
+    throw error
+  }
+}
+
+/**
  * Process a single monitor
  */
 async function processMonitor(
@@ -71,15 +105,32 @@ async function processMonitor(
     const urls = buildSearchUrls(monitor)
     console.log(`[MONITOR ${monitor._id}] Generated ${urls.length} URLs to scrape`)
 
-    // Step 2: Scrape each URL
-    // TODO: Integrate Firecrawl
-    // For now, we'll create a dummy offer to test the plumbing
-    console.log(`[MONITOR ${monitor._id}] Creating dummy offer (scraping not yet implemented)`)
-    await createDummyOffer(client, monitor._id, monitor.userId)
+    // Step 2: Scrape each URL with Firecrawl
+    if (!env.FIRECRAWL_API_KEY || env.FIRECRAWL_API_KEY === 'your-firecrawl-api-key-here') {
+      console.log(`[MONITOR ${monitor._id}] Firecrawl not configured, creating dummy offer`)
+      await createDummyOffer(client, monitor._id, monitor.userId)
+    } else {
+      console.log(`[MONITOR ${monitor._id}] Scraping ${urls.length} URLs with Firecrawl`)
+      const scrapedContent = await scrapeUrls(env, urls, 2) // Max 2 concurrent requests
 
-    // Step 3: Extract offers with AI
-    // TODO: Integrate Cloudflare AI
-    // For now, the dummy offer serves as a test
+      if (scrapedContent.size === 0) {
+        console.warn(`[MONITOR ${monitor._id}] No content scraped from any URL`)
+        throw new Error('Failed to scrape any URLs')
+      }
+
+      console.log(`[MONITOR ${monitor._id}] Successfully scraped ${scrapedContent.size} URLs`)
+
+      // Step 3: Extract offers with AI
+      // TODO: Integrate Cloudflare AI for extraction
+      // For now, log the scraped content
+      for (const [url, content] of scrapedContent.entries()) {
+        console.log(`[MONITOR ${monitor._id}] Scraped ${content.markdown.length} chars from ${url}`)
+      }
+
+      // Create a dummy offer with scraped content reference
+      console.log(`[MONITOR ${monitor._id}] AI extraction not yet implemented, creating dummy offer`)
+      await createDummyOffer(client, monitor._id, monitor.userId)
+    }
 
     // Step 4: Update monitor status
     await updateMonitorLastRun(client, monitor._id, true)

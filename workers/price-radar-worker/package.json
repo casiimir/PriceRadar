@@ -9,7 +9,9 @@
     "tail": "wrangler tail",
     "test": "vitest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@mendable/firecrawl-js": "^4.5.0"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
     "@types/node": "^22.10.2",
