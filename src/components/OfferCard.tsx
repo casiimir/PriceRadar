@@ -22,6 +22,16 @@ interface OfferCardProps {
   onView?: (offerId: Id<'offers'>, url: string) => void
 }
 
+/**
+ * Renders a card displaying an offer with actions to view or archive it.
+ *
+ * Shows image or placeholder, title, formatted price and condition, snippet, site and location metadata, a relative "found" time, and a "NEW" badge when the offer is new.
+ *
+ * @param offer - The offer data to render (title, price, currency, url, siteName, snippet, optional imageUrl/condition/location, status, and foundAt).
+ * @param onArchive - Optional callback invoked with the offer id when the archive action is triggered.
+ * @param onView - Optional callback invoked with the offer id and URL when the view action is triggered; the view action also opens the offer URL in a new browser tab.
+ * @returns The rendered JSX element for the offer card.
+ */
 export default function OfferCard({ offer, onArchive, onView }: OfferCardProps) {
   const isNew = offer.status === 'new'
 

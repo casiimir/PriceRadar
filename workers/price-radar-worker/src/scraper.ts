@@ -20,7 +20,11 @@ export interface ScrapedContent {
 }
 
 /**
- * Get Firecrawl client instance
+ * Create a FirecrawlApp client using the FIRECRAWL_API_KEY from the provided environment.
+ *
+ * @param env - Environment object containing configuration values
+ * @returns A configured FirecrawlApp instance
+ * @throws Error if `FIRECRAWL_API_KEY` is not present on `env`
  */
 export function getFirecrawlClient(env: Env): FirecrawlApp {
   if (!env.FIRECRAWL_API_KEY) {
@@ -31,7 +35,12 @@ export function getFirecrawlClient(env: Env): FirecrawlApp {
 }
 
 /**
- * Scrape a single URL and return cleaned content
+ * Scrapes the given URL and returns normalized scraped content.
+ *
+ * @param env - Environment containing the `FIRECRAWL_API_KEY` used to create the Firecrawl client
+ * @param url - The HTTP(S) URL to scrape
+ * @returns The scraped content with `html`, `markdown`, `text` (markdown fallback), and optional `metadata`
+ * @throws Error when Firecrawl returns no markdown content or when the scrape request fails
  */
 export async function scrapeUrl(
   env: Env,
@@ -70,7 +79,12 @@ export async function scrapeUrl(
 }
 
 /**
- * Scrape multiple URLs in parallel with rate limiting
+ * Scrape multiple URLs in parallel while batching requests to limit concurrency and reduce rate-limit risk.
+ *
+ * The function processes URLs in batches of up to `maxConcurrent`, waits 1 second between batches, and aggregates successful results.
+ *
+ * @param maxConcurrent - Maximum number of URLs to scrape in parallel per batch (default: 3)
+ * @returns A map from URL to `ScrapedContent` for each successfully scraped URL; failed scrapes are logged and not included in the map
  */
 export async function scrapeUrls(
   env: Env,

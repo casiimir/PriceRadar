@@ -39,6 +39,17 @@ interface MonitorCardProps {
   onArchiveOffer?: (offerId: Id<'offers'>) => void
 }
 
+/**
+ * Renders a card summarizing a monitor and its recent offers, with controls to pause, resume, delete, and toggle offer details.
+ *
+ * @param monitor - Monitor data to display (query, status, sites, frequency, last run/error info).
+ * @param offers - Optional list of recent offers associated with the monitor; up to five are shown when expanded.
+ * @param onPause - Optional callback invoked with the monitor id when the Pause action is triggered.
+ * @param onResume - Optional callback invoked with the monitor id when the Resume action is triggered.
+ * @param onDelete - Optional callback invoked with the monitor id when the Delete action is confirmed.
+ * @param onArchiveOffer - Optional callback invoked with an offer id when an offer's archive action is triggered.
+ * @returns A JSX element representing the monitor card UI.
+ */
 export default function MonitorCard({
   monitor,
   offers = [],

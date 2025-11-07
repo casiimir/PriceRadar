@@ -23,8 +23,10 @@ export interface Monitor {
 }
 
 /**
- * Main orchestration function
- * This is called by the cron trigger
+ * Orchestrates scheduled monitor scans for a given frequency by fetching monitors due to run and processing them concurrently.
+ *
+ * @param frequencyMinutes - The frequency in minutes used to select which monitors are due to run
+ * @throws Propagates any unrecoverable error encountered while fetching or processing monitors
  */
 export async function orchestrateScans(env: Env, frequencyMinutes: number): Promise<void> {
   console.log(`[ORCHESTRATOR] Starting scan for ${frequencyMinutes}min frequency`)
@@ -58,7 +60,11 @@ export async function orchestrateScans(env: Env, frequencyMinutes: number): Prom
 }
 
 /**
- * Run a single monitor immediately (called from HTTP endpoint)
+ * Execute a single monitor run for the given monitor ID.
+ *
+ * @param monitorId - ID of the monitor to run
+ * @returns An object with `offersFound` set to the number of offers discovered (currently returns `1` as a placeholder)
+ * @throws Error if the monitor does not exist, is not active, or if processing fails
  */
 export async function runSingleMonitor(
   env: Env,
@@ -91,8 +97,14 @@ export async function runSingleMonitor(
 }
 
 /**
- * Process a single monitor
- */
+ * Process a monitor: build search URLs, scrape content (if Firecrawl is configured), create offers, and record the monitor's last run result.
+ *
+ * Builds search URLs from the monitor configuration, uses Firecrawl to fetch page content when a valid `FIRECRAWL_API_KEY` is present (falls back to creating a dummy offer otherwise), and updates the monitor's lastRun status to indicate success. On error, updates the monitor last run as failed with the error message and rethrows the error.
+ *
+ * @param env - Runtime environment (used for `FIRECRAWL_API_KEY` and other configuration)
+ * @param monitor - The monitor record to process (contains `_id`, `userId`, `queryText`, `queryJson`, `sites`, etc.)
+ *
+ * @throws Error if scraping yields no content or if any processing step fails.
 async function processMonitor(
   env: Env,
   client: any,

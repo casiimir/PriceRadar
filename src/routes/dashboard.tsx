@@ -9,6 +9,13 @@ import { useState } from 'react'
 
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })
 
+/**
+ * Render the main dashboard for the current user, showing welcome text, stats, monitor list, sidebar, and a modal for creating monitors.
+ *
+ * Displays a loading spinner until the current user and their monitors are available. Once loaded, it shows active/new/total offer statistics, a list of monitors (or an empty state prompting creation), quick actions, recent activity, and a pro tip. Provides UI callbacks for pausing, resuming, deleting monitors, archiving offers, and creating new monitors (creation triggers an immediate background run).
+ *
+ * @returns The dashboard React element containing the user interface described above.
+ */
 function Dashboard() {
   // State for modal
   const [showCreateModal, setShowCreateModal] = useState(false)
