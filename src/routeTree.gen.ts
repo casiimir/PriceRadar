@@ -9,7 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestWorkerRouteImport } from './routes/test-worker'
 import { Route as TestUiRouteImport } from './routes/test-ui'
+import { Route as TestConvexRouteImport } from './routes/test-convex'
+import { Route as TestComponentsRouteImport } from './routes/test-components'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LandingRouteImport } from './routes/landing'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
@@ -19,9 +25,39 @@ import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
+const TestWorkerRoute = TestWorkerRouteImport.update({
+  id: '/test-worker',
+  path: '/test-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TestUiRoute = TestUiRouteImport.update({
   id: '/test-ui',
   path: '/test-ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestConvexRoute = TestConvexRouteImport.update({
+  id: '/test-convex',
+  path: '/test-convex',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestComponentsRoute = TestComponentsRouteImport.update({
+  id: '/test-components',
+  path: '/test-components',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -67,7 +103,13 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/landing': typeof LandingRoute
+  '/pricing': typeof PricingRoute
+  '/test-components': typeof TestComponentsRoute
+  '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -78,7 +120,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/landing': typeof LandingRoute
+  '/pricing': typeof PricingRoute
+  '/test-components': typeof TestComponentsRoute
+  '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -90,7 +138,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/landing': typeof LandingRoute
+  '/pricing': typeof PricingRoute
+  '/test-components': typeof TestComponentsRoute
+  '/test-convex': typeof TestConvexRoute
   '/test-ui': typeof TestUiRoute
+  '/test-worker': typeof TestWorkerRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -103,7 +157,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dashboard'
+    | '/landing'
+    | '/pricing'
+    | '/test-components'
+    | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -114,7 +174,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dashboard'
+    | '/landing'
+    | '/pricing'
+    | '/test-components'
+    | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -125,7 +191,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
+    | '/landing'
+    | '/pricing'
+    | '/test-components'
+    | '/test-convex'
     | '/test-ui'
+    | '/test-worker'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -137,7 +209,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  LandingRoute: typeof LandingRoute
+  PricingRoute: typeof PricingRoute
+  TestComponentsRoute: typeof TestComponentsRoute
+  TestConvexRoute: typeof TestConvexRoute
   TestUiRoute: typeof TestUiRoute
+  TestWorkerRoute: typeof TestWorkerRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
   DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
@@ -149,11 +227,53 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/test-worker': {
+      id: '/test-worker'
+      path: '/test-worker'
+      fullPath: '/test-worker'
+      preLoaderRoute: typeof TestWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/test-ui': {
       id: '/test-ui'
       path: '/test-ui'
       fullPath: '/test-ui'
       preLoaderRoute: typeof TestUiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test-convex': {
+      id: '/test-convex'
+      path: '/test-convex'
+      fullPath: '/test-convex'
+      preLoaderRoute: typeof TestConvexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test-components': {
+      id: '/test-components'
+      path: '/test-components'
+      fullPath: '/test-components'
+      preLoaderRoute: typeof TestComponentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -217,7 +337,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  LandingRoute: LandingRoute,
+  PricingRoute: PricingRoute,
+  TestComponentsRoute: TestComponentsRoute,
+  TestConvexRoute: TestConvexRoute,
   TestUiRoute: TestUiRoute,
+  TestWorkerRoute: TestWorkerRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
   DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,

@@ -1,177 +1,124 @@
 import { Link } from '@tanstack/react-router'
-
-import { useState } from 'react'
-import {
-  ChevronDown,
-  ChevronRight,
-  Home,
-  Menu,
-  Network,
-  SquareFunction,
-  StickyNote,
-  X,
-} from 'lucide-react'
+import { Radar, LayoutDashboard, CreditCard, User, LogIn } from 'lucide-react'
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [groupedExpanded, setGroupedExpanded] = useState<
-    Record<string, boolean>
-  >({})
+  // TODO: Replace with actual auth state from Convex Auth
+  const isAuthenticated = false
+  const userPlan = 'free' // 'free' | 'pro'
 
   return (
-    <>
-      <header className="p-4 flex items-center bg-gray-800 text-white shadow-lg">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="Open menu"
-        >
-          <Menu size={24} />
-        </button>
-        <h1 className="ml-4 text-xl font-semibold">
-          <Link to="/">
-            <img
-              src="/tanstack-word-logo-white.svg"
-              alt="TanStack Logo"
-              className="h-10"
-            />
-          </Link>
-        </h1>
-      </header>
-
-      <aside
-        className={`fixed top-0 left-0 h-full w-80 bg-gray-900 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold">Navigation</h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label="Close menu"
+    <div className="navbar bg-base-100 sticky top-0 z-50 shadow-lg">
+      <div className="navbar-start">
+        <div className="dropdown">
+          <label tabIndex={0} className="btn btn-ghost lg:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              />
+            </svg>
+          </label>
+          <ul
+            tabIndex={0}
+            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
           >
-            <X size={24} />
-          </button>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            {isAuthenticated && (
+              <li>
+                <Link to="/dashboard">Dashboard</Link>
+              </li>
+            )}
+            <li>
+              <Link to="/pricing">Pricing</Link>
+            </li>
+          </ul>
         </div>
+        <Link to="/" className="btn btn-ghost gap-2 text-xl normal-case">
+          <Radar className="text-primary h-6 w-6" />
+          <span className="font-bold">
+            Price <span className="text-primary">Radar</span>
+          </span>
+        </Link>
+      </div>
 
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <Link
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <Home size={20} />
-            <span className="font-medium">Home</span>
-          </Link>
-
-          {/* Demo Links Start */}
-
-          <Link
-            to="/demo/start/server-funcs"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <SquareFunction size={20} />
-            <span className="font-medium">Start - Server Functions</span>
-          </Link>
-
-          <Link
-            to="/demo/start/api-request"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-            activeProps={{
-              className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-            }}
-          >
-            <Network size={20} />
-            <span className="font-medium">Start - API Request</span>
-          </Link>
-
-          <div className="flex flex-row justify-between">
-            <Link
-              to="/demo/start/ssr"
-              onClick={() => setIsOpen(false)}
-              className="flex-1 flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-              activeProps={{
-                className:
-                  'flex-1 flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-              }}
-            >
-              <StickyNote size={20} />
-              <span className="font-medium">Start - SSR Demos</span>
+      <div className="navbar-center hidden lg:flex">
+        <ul className="menu menu-horizontal px-1">
+          <li>
+            <Link to="/" activeProps={{ className: 'active' }}>
+              Home
             </Link>
-            <button
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-              onClick={() =>
-                setGroupedExpanded((prev) => ({
-                  ...prev,
-                  StartSSRDemo: !prev.StartSSRDemo,
-                }))
-              }
-            >
-              {groupedExpanded.StartSSRDemo ? (
-                <ChevronDown size={20} />
-              ) : (
-                <ChevronRight size={20} />
-              )}
-            </button>
-          </div>
-          {groupedExpanded.StartSSRDemo && (
-            <div className="flex flex-col ml-4">
-              <Link
-                to="/demo/start/ssr/spa-mode"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">SPA Mode</span>
+          </li>
+          {isAuthenticated && (
+            <li>
+              <Link to="/dashboard" activeProps={{ className: 'active' }} className="gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
               </Link>
-
-              <Link
-                to="/demo/start/ssr/full-ssr"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Full SSR</span>
-              </Link>
-
-              <Link
-                to="/demo/start/ssr/data-only"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
-                activeProps={{
-                  className:
-                    'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
-                }}
-              >
-                <StickyNote size={20} />
-                <span className="font-medium">Data Only</span>
-              </Link>
-            </div>
+            </li>
           )}
+          <li>
+            <Link to="/pricing" activeProps={{ className: 'active' }} className="gap-2">
+              <CreditCard className="h-4 w-4" />
+              Pricing
+            </Link>
+          </li>
+        </ul>
+      </div>
 
-          {/* Demo Links End */}
-        </nav>
-      </aside>
-    </>
+      <div className="navbar-end gap-2">
+        {isAuthenticated ? (
+          <>
+            <div className="badge badge-primary badge-sm">{userPlan.toUpperCase()}</div>
+            <div className="dropdown dropdown-end">
+              <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+                <div className="bg-primary text-primary-content flex w-10 items-center justify-center rounded-full">
+                  <User className="h-6 w-6" />
+                </div>
+              </label>
+              <ul
+                tabIndex={0}
+                className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+              >
+                <li>
+                  <Link to="/dashboard" className="justify-between">
+                    Dashboard
+                    <span className="badge">{userPlan}</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/pricing">Upgrade to Pro</Link>
+                </li>
+                <li>
+                  <a>Settings</a>
+                </li>
+                <li>
+                  <a>Logout</a>
+                </li>
+              </ul>
+            </div>
+          </>
+        ) : (
+          <>
+            <Link to="/pricing" className="btn btn-ghost btn-sm">
+              Pricing
+            </Link>
+            <button className="btn btn-primary btn-sm gap-2">
+              <LogIn className="h-4 w-4" />
+              Sign In
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
