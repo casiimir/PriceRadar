@@ -6,6 +6,8 @@ import type { Id } from '../../convex/_generated/dataModel'
 import MonitorCard from '../components/MonitorCard'
 import MonitorInput from '../components/MonitorInput'
 import { useState } from 'react'
+import { Toaster } from 'react-hot-toast'
+import { useOfferNotifications } from '../hooks/useOfferNotifications'
 
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })
 
@@ -17,6 +19,9 @@ function Dashboard() {
   // For now, use first user from database
   const users = useQuery(api.users.getAll)
   const user = users?.[0]
+
+  // Enable offer notifications
+  useOfferNotifications(user?._id)
 
   // Get user's monitors
   const monitors = useQuery(
@@ -333,6 +338,9 @@ function Dashboard() {
           </form>
         </dialog>
       )}
+
+      {/* Toast Notifications */}
+      <Toaster />
     </div>
   )
 }
