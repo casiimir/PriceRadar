@@ -251,13 +251,13 @@ export const remove = mutation({
 })
 
 /**
- * Create monitor from UI (simplified version without AI parsing)
- * TODO: Replace with AI-powered parsing in Phase 6
+ * Create monitor from UI with optional AI-parsed queryJson
  */
 export const createFromUI = mutation({
   args: {
     userId: v.id('users'),
     queryText: v.string(),
+    queryJson: v.optional(v.any()), // Optional: AI-parsed query from Worker
   },
   handler: async (ctx, args) => {
     const now = Date.now()
@@ -284,13 +284,16 @@ export const createFromUI = mutation({
       throw new Error('Pro plan limit: 20 active monitors.')
     }
 
-    // For now, use default settings until AI parser is implemented
-    // TODO: In Phase 6, add AI parsing to extract structured data from queryText
-    // Temporarily use the full query text as the item for URL building
-    const defaultQueryJson = {
-      query: args.queryText,
-      item: args.queryText, // Use full text as search term until AI parsing is implemented
-      // AI will extract: brand, condition, price_min, price_max, location, etc.
+    // Use AI-parsed queryJson if provided, otherwise fallback to basic parsing
+    const queryJson = args.queryJson || {
+      item: args.queryText,
+      query: args.queryText
+    }
+
+    if (args.queryJson) {
+      console.log('[MONITOR] Using AI-parsed query:', JSON.stringify(queryJson))
+    } else {
+      console.log('[MONITOR] Using basic query parsing (no AI):', JSON.stringify(queryJson))
     }
 
     const defaultSites = user.plan === 'free' ? ['ebay'] : ['ebay', 'subito']
@@ -300,7 +303,7 @@ export const createFromUI = mutation({
     const monitorId = await ctx.db.insert('monitors', {
       userId: args.userId,
       queryText: args.queryText,
-      queryJson: defaultQueryJson,
+      queryJson: queryJson,
       status: 'active',
       sites: defaultSites,
       frequencyMinutes: defaultFrequency,

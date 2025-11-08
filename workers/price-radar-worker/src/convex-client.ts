@@ -125,35 +125,6 @@ export async function fetchMonitorsToRun(
 }
 
 /**
- * Create a dummy offer (for testing plumbing)
- */
-export async function createDummyOffer(
-  client: ConvexClient,
-  monitorId: string,
-  userId: string
-): Promise<void> {
-  try {
-    await client.mutation('offers:create', {
-      monitorId,
-      userId,
-      title: '🧪 Test Offer - RTX 4080 Founders Edition',
-      price: 799.99,
-      currency: 'EUR',
-      url: 'https://example.com/test-offer',
-      siteName: 'test.example.com',
-      snippet: 'This is a dummy offer created by the worker to test the plumbing. Real offers will be created once scraping is integrated.',
-      imageUrl: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Test+Offer',
-      condition: 'New',
-      location: 'Test Location',
-    })
-    console.log('[CONVEX] Created dummy offer for monitor:', monitorId)
-  } catch (error) {
-    console.error('[CONVEX] Error creating dummy offer:', error)
-    throw error
-  }
-}
-
-/**
  * Update monitor last run timestamp
  */
 export async function updateMonitorLastRun(

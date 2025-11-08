@@ -18,9 +18,9 @@ ENVIRONMENT = "development"
 crons = ["*/3 * * * *", "*/30 * * * *"]
 
 # Bindings for Cloudflare services
-# AI binding will be added when we integrate AI
-# [ai]
-# binding = "AI"
+# AI binding for Llama 3.3 70B
+[ai]
+binding = "AI"
 
 # KV for caching (optional)
 # [[kv_namespaces]]

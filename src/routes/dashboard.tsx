@@ -66,18 +66,24 @@ function Dashboard() {
     await archiveOffer({ offerId })
   }
 
-  const handleCreateMonitor = async (query: string) => {
+  const handleCreateMonitor = async (query: string, parsedQuery?: any) => {
     if (!user) {
       throw new Error('User not found')
     }
 
     try {
-      // Create the monitor in Convex
-      const monitorId = await createMonitor({ userId: user._id, queryText: query })
+      console.log('[DASHBOARD] Creating monitor with query:', query)
+      console.log('[DASHBOARD] AI parsed query:', parsedQuery)
+
+      // Create the monitor in Convex with AI-parsed queryJson
+      const monitorId = await createMonitor({
+        userId: user._id,
+        queryText: query,
+        queryJson: parsedQuery
+      })
       setShowCreateModal(false)
 
-      // Trigger immediate execution via Worker
-      // Note: This runs in background, don't wait for it
+      // Trigger immediate execution via Worker (background)
       fetch('http://localhost:8787/run-monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,50 +123,61 @@ function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-figure text-primary">
-              <Activity className="w-8 h-8" />
-            </div>
-            <div className="stat-title">Active Monitors</div>
-            <div className="stat-value text-primary">{stats.activeMonitors}</div>
-            <div className="stat-desc">
-              {user!.plan === 'free' ? '1 max on Free' : '20 max on Pro'}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="card bg-base-100 border border-base-300">
+          <div className="card-body p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-base-content/60 mb-1">Active Monitors</p>
+                <p className="text-2xl font-bold">{stats.activeMonitors}</p>
+                <p className="text-xs text-base-content/50 mt-1">
+                  {user!.plan === 'free' ? '1 max on Free' : '20 max on Pro'}
+                </p>
+              </div>
+              <Activity className="w-8 h-8 text-base-content/20" />
             </div>
           </div>
         </div>
 
-        <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-figure text-secondary">
-              <Bell className="w-8 h-8" />
+        <div className="card bg-base-100 border border-base-300">
+          <div className="card-body p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-base-content/60 mb-1">New Offers</p>
+                <p className="text-2xl font-bold">{stats.newOffers}</p>
+                <p className="text-xs text-base-content/50 mt-1">Waiting for review</p>
+              </div>
+              <Bell className="w-8 h-8 text-base-content/20" />
             </div>
-            <div className="stat-title">New Offers</div>
-            <div className="stat-value text-secondary">{stats.newOffers}</div>
-            <div className="stat-desc">Waiting for your review</div>
           </div>
         </div>
 
-        <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-figure text-accent">
-              <TrendingUp className="w-8 h-8" />
+        <div className="card bg-base-100 border border-base-300">
+          <div className="card-body p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-base-content/60 mb-1">Total Offers</p>
+                <p className="text-2xl font-bold">{stats.totalOffers}</p>
+                <p className="text-xs text-base-content/50 mt-1">All time</p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-base-content/20" />
             </div>
-            <div className="stat-title">Total Offers</div>
-            <div className="stat-value text-accent">{stats.totalOffers}</div>
-            <div className="stat-desc">All time</div>
           </div>
         </div>
 
-        <div className="stats shadow">
-          <div className="stat">
-            <div className="stat-figure text-success">
+        <div className="card bg-base-100 border border-base-300">
+          <div className="card-body p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-base-content/60 mb-1">Saved</p>
+                <p className="text-2xl font-bold">€{stats.savedAmount}</p>
+                <p className="text-xs text-base-content/50 mt-1">vs retail price</p>
+              </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                className="w-8 h-8 stroke-current"
+                className="w-8 h-8 stroke-current text-base-content/20"
               >
                 <path
                   strokeLinecap="round"
@@ -170,38 +187,41 @@ function Dashboard() {
                 ></path>
               </svg>
             </div>
-            <div className="stat-title">Saved</div>
-            <div className="stat-value text-success">€{stats.savedAmount}</div>
-            <div className="stat-desc">vs retail price</div>
           </div>
         </div>
       </div>
 
       {/* Plan Banner */}
       {user!.plan === 'free' && (
-        <div className="alert alert-info mb-8">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            className="h-6 w-6 shrink-0 stroke-current"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <div>
-            <h3 className="font-bold">You are on the Free plan</h3>
-            <div className="text-xs">
-              Upgrade to Pro for 20 monitors, 3-minute scans, and email notifications!
+        <div className="card bg-base-100 border border-base-300 mb-8">
+          <div className="card-body p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 stroke-current text-base-content/60"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <div>
+                  <h3 className="font-semibold text-sm">Free Plan</h3>
+                  <p className="text-xs text-base-content/60">
+                    Upgrade to Pro for 20 monitors, 3-minute scans, and email notifications
+                  </p>
+                </div>
+              </div>
+              <Link to="/pricing" className="btn btn-sm btn-neutral">
+                Upgrade
+              </Link>
             </div>
           </div>
-          <Link to="/pricing" className="btn btn-sm btn-primary">
-            Upgrade Now
-          </Link>
         </div>
       )}
 
@@ -254,12 +274,12 @@ function Dashboard() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <div className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <h3 className="card-title text-lg mb-4">Quick Actions</h3>
+          <div className="card bg-base-100 border border-base-300">
+            <div className="card-body p-5">
+              <h3 className="font-semibold mb-4">Quick Actions</h3>
               <div className="space-y-2">
                 <button
-                  className="btn btn-outline btn-block justify-start"
+                  className="btn btn-sm btn-block btn-neutral justify-start"
                   onClick={() => setShowCreateModal(true)}
                 >
                   <Plus className="w-4 h-4" />
@@ -270,21 +290,21 @@ function Dashboard() {
           </div>
 
           {/* Recent Activity */}
-          <div className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <h3 className="card-title text-lg mb-4">Recent Activity</h3>
-              <div className="text-center py-8 text-base-content/50">
-                <Activity className="w-12 h-12 mx-auto mb-2 opacity-30" />
+          <div className="card bg-base-100 border border-base-300">
+            <div className="card-body p-5">
+              <h3 className="font-semibold mb-4">Recent Activity</h3>
+              <div className="text-center py-8 text-base-content/40">
+                <Activity className="w-10 h-10 mx-auto mb-2" />
                 <p className="text-sm">No recent activity</p>
               </div>
             </div>
           </div>
 
           {/* Tips */}
-          <div className="card bg-gradient-to-br from-primary/10 to-primary/5">
-            <div className="card-body">
-              <h3 className="card-title text-lg mb-2">💡 Pro Tip</h3>
-              <p className="text-sm text-base-content/70">
+          <div className="card bg-base-100 border border-base-300">
+            <div className="card-body p-5">
+              <h3 className="font-semibold mb-2">Pro Tip</h3>
+              <p className="text-sm text-base-content/60">
                 Use natural language in your queries! Try "RTX 4080 usata sotto 800 euro" instead
                 of keywords.
               </p>

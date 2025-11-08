@@ -6,10 +6,10 @@ import type { Env } from './index'
 import {
   getConvexClient,
   fetchMonitorsToRun,
-  createDummyOffer,
   updateMonitorLastRun,
 } from './convex-client'
 import { scrapeUrls } from './scraper'
+import { extractOffersWithAI, createDummyOffer } from './ai-extractor'
 
 export interface Monitor {
   _id: string
@@ -107,8 +107,18 @@ async function processMonitor(
 
     // Step 2: Scrape each URL with Firecrawl
     if (!env.FIRECRAWL_API_KEY || env.FIRECRAWL_API_KEY === 'your-firecrawl-api-key-here') {
-      console.log(`[MONITOR ${monitor._id}] Firecrawl not configured, creating dummy offer`)
-      await createDummyOffer(client, monitor._id, monitor.userId)
+      console.warn(`[MONITOR ${monitor._id}] Firecrawl not configured, creating dummy offer`)
+      const dummyOffer = createDummyOffer({ item: monitor.queryText }, urls[0])
+      await client.mutation('offers:create', {
+        monitorId: monitor._id,
+        userId: monitor.userId,
+        title: dummyOffer.title,
+        price: dummyOffer.price,
+        currency: dummyOffer.currency,
+        url: dummyOffer.url,
+        siteName: new URL(dummyOffer.url).hostname,
+        snippet: dummyOffer.snippet,
+      })
     } else {
       console.log(`[MONITOR ${monitor._id}] Scraping ${urls.length} URLs with Firecrawl`)
       const scrapedContent = await scrapeUrls(env, urls, 2) // Max 2 concurrent requests
@@ -120,16 +130,112 @@ async function processMonitor(
 
       console.log(`[MONITOR ${monitor._id}] Successfully scraped ${scrapedContent.size} URLs`)
 
-      // Step 3: Extract offers with AI
-      // TODO: Integrate Cloudflare AI for extraction
-      // For now, log the scraped content
+      // Step 3: Extract offers with Cloudflare AI
+      let allOffers: any[] = []
+
       for (const [url, content] of scrapedContent.entries()) {
-        console.log(`[MONITOR ${monitor._id}] Scraped ${content.markdown.length} chars from ${url}`)
+        console.log(`[MONITOR ${monitor._id}] Processing ${content.markdown.length} chars from ${url}`)
+
+        // Extract offers using AI with images
+        const extractionResult = await extractOffersWithAI(
+          env,
+          content.markdown,
+          monitor.queryJson || { item: monitor.queryText },
+          url,
+          content.images // Pass extracted images to AI
+        )
+
+        if (extractionResult.success && extractionResult.offers.length > 0) {
+          console.log(`[MONITOR ${monitor._id}] AI extracted ${extractionResult.offers.length} offers from ${url}`)
+          allOffers.push(...extractionResult.offers)
+        } else {
+          console.warn(`[MONITOR ${monitor._id}] AI extraction failed or found no offers from ${url}`)
+        }
       }
 
-      // Create a dummy offer with scraped content reference
-      console.log(`[MONITOR ${monitor._id}] AI extraction not yet implemented, creating dummy offer`)
-      await createDummyOffer(client, monitor._id, monitor.userId)
+      // Step 3.5: Filter offers by price and condition constraints
+      let filteredOffers = allOffers
+      if (monitor.queryJson) {
+        const beforeFilterCount = allOffers.length
+
+        filteredOffers = allOffers.filter(offer => {
+          // Filter by price_max if specified
+          if (monitor.queryJson?.price_max && offer.price > monitor.queryJson.price_max) {
+            return false
+          }
+
+          // Filter by price_min if specified
+          if (monitor.queryJson?.price_min && offer.price < monitor.queryJson.price_min) {
+            return false
+          }
+
+          // Filter by condition if specified
+          if (monitor.queryJson?.condition && offer.condition) {
+            const normalizedCondition = offer.condition.toLowerCase()
+            const requiredCondition = monitor.queryJson.condition.toLowerCase()
+
+            // Map condition variations
+            const conditionMap: Record<string, string[]> = {
+              'new': ['new', 'nuovo', 'nueva', 'neuf'],
+              'used': ['used', 'usato', 'usado', 'occasion', 'usata'],
+              'refurbished': ['refurbished', 'ricondizionato', 'recondicionado', 'reconditionné', 'ricondizionata']
+            }
+
+            const acceptableConditions = conditionMap[requiredCondition] || [requiredCondition]
+            const matchesCondition = acceptableConditions.some(cond => normalizedCondition.includes(cond))
+
+            if (!matchesCondition) {
+              return false
+            }
+          }
+
+          return true
+        })
+
+        if (beforeFilterCount !== filteredOffers.length) {
+          console.log(`[MONITOR ${monitor._id}] Filtered offers: ${beforeFilterCount} -> ${filteredOffers.length}`)
+        }
+      }
+
+      // Step 4: Save extracted offers to Convex
+      if (filteredOffers.length > 0) {
+        console.log(`[MONITOR ${monitor._id}] Saving ${filteredOffers.length} total offers to Convex`)
+
+        for (const offer of filteredOffers) {
+          await client.mutation('offers:create', {
+            monitorId: monitor._id,
+            userId: monitor.userId,
+            title: offer.title,
+            price: offer.price,
+            currency: offer.currency,
+            url: offer.url,
+            siteName: new URL(offer.url).hostname,
+            snippet: offer.snippet,
+            imageUrl: offer.imageUrl,
+            condition: offer.condition,
+            location: offer.location,
+          })
+        }
+
+        console.log(`[MONITOR ${monitor._id}] All offers saved successfully`)
+      } else {
+        // Fallback: Create one dummy offer if AI found nothing
+        console.warn(`[MONITOR ${monitor._id}] No offers extracted, creating fallback dummy offer`)
+        const dummyOffer = createDummyOffer(
+          { item: monitor.queryText },
+          urls[0]
+        )
+        await client.mutation('offers:create', {
+          monitorId: monitor._id,
+          userId: monitor.userId,
+          title: dummyOffer.title,
+          price: dummyOffer.price,
+          currency: dummyOffer.currency,
+          url: dummyOffer.url,
+          siteName: new URL(dummyOffer.url).hostname,
+          snippet: dummyOffer.snippet,
+        })
+      }
     }
 
     // Step 4: Update monitor status
@@ -168,13 +274,20 @@ function buildSearchUrls(monitor: Monitor): string[] {
  * Build URL for a specific site
  */
 function buildSiteUrl(site: string, queryJson: any): string | null {
-  const item = queryJson.item || ''
+  // Build comprehensive search query combining all available fields
+  const searchParts: string[] = []
+
+  if (queryJson.brand) searchParts.push(queryJson.brand)
+  if (queryJson.model) searchParts.push(queryJson.model)
+  if (queryJson.item && !searchParts.length) searchParts.push(queryJson.item) // Fallback to item if no brand/model
+
+  const searchQuery = searchParts.join(' ') || queryJson.item || ''
   const priceMax = queryJson.price_max || ''
 
   switch (site.toLowerCase()) {
     case 'ebay':
       // eBay Italy search URL
-      const ebayQuery = encodeURIComponent(item)
+      const ebayQuery = encodeURIComponent(searchQuery)
       let ebayUrl = `https://www.ebay.it/sch/i.html?_nkw=${ebayQuery}`
 
       if (priceMax) {
@@ -192,12 +305,12 @@ function buildSiteUrl(site: string, queryJson: any): string | null {
 
     case 'subito':
       // Subito.it search URL
-      const subitoQuery = encodeURIComponent(item)
+      const subitoQuery = encodeURIComponent(searchQuery)
       return `https://www.subito.it/annunci-italia/vendita/usato/?q=${subitoQuery}`
 
     case 'amazon':
       // Amazon Italy search URL
-      const amazonQuery = encodeURIComponent(item)
+      const amazonQuery = encodeURIComponent(searchQuery)
       let amazonUrl = `https://www.amazon.it/s?k=${amazonQuery}`
 
       if (priceMax) {

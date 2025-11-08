@@ -11,12 +11,52 @@ export interface ScrapedContent {
   html: string
   markdown: string
   text: string
+  images?: string[] // Extracted image URLs from HTML
   metadata?: {
     title?: string
     description?: string
     language?: string
     sourceURL?: string
   }
+}
+
+/**
+ * Extract image URLs from HTML content
+ */
+function extractImagesFromHTML(html: string): string[] {
+  const images: string[] = []
+
+  // Match img tags with src attribute
+  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
+  let match
+
+  while ((match = imgRegex.exec(html)) !== null) {
+    const imgUrl = match[1]
+
+    // Filter out common non-product images
+    const skipPatterns = [
+      'data:image',           // Base64 images
+      'logo',                 // Logos
+      'icon',                 // Icons
+      'sprite',               // Sprite images
+      'blank',                // Blank images
+      'placeholder',          // Placeholders
+      '1x1',                  // Tracking pixels
+      'avatar',               // Avatars
+      'badge',                // Badges
+    ]
+
+    const shouldSkip = skipPatterns.some(pattern =>
+      imgUrl.toLowerCase().includes(pattern)
+    )
+
+    if (!shouldSkip && imgUrl.startsWith('http')) {
+      images.push(imgUrl)
+    }
+  }
+
+  console.log(`[SCRAPER] Extracted ${images.length} product images from HTML`)
+  return images
 }
 
 /**
@@ -47,6 +87,7 @@ export async function scrapeUrl(
       formats: ['markdown', 'html'],
       onlyMainContent: true, // Extract only main content, skip nav/footer/ads
       waitFor: 2000, // Wait for dynamic content to load
+      timeout: 90000, // Increase timeout to 90 seconds for complex pages
     })
 
     // Firecrawl returns data directly without success wrapper
@@ -57,10 +98,14 @@ export async function scrapeUrl(
 
     console.log(`[SCRAPER] Successfully scraped: ${url} (${result.markdown.length} chars)`)
 
+    // Extract images from HTML
+    const images = result.html ? extractImagesFromHTML(result.html) : []
+
     return {
       html: result.html || '',
       markdown: result.markdown || '',
       text: result.markdown || '', // Use markdown as text fallback
+      images,
       metadata: result.metadata || {},
     }
   } catch (error) {
